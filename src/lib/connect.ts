@@ -5,7 +5,7 @@ import { CookieJar as CookieJar2, MemoryCookieStore } from "tough-cookie";
 import * as api from "./api";
 import {Credentials} from "./interfaces/api/api";
 import {Context} from "./interfaces/api/context";
-import {login} from "./login";
+import {login, loginResume} from "./login";
 import requestIO from "./request-io";
 
 export interface StateContainer {
@@ -36,11 +36,11 @@ export async function connect(options: ConnectOptions): Promise<api.Api> {
   if (options.state !== undefined) {
     const store: MemoryCookieStore = new MemoryCookieStore();
     CookieJar2.deserializeSync(options.state.cookieJar, store);
-    apiContext = {
-      skypeToken: JSON.parse(options.state.skypeToken), cookieStore: store, cookieJar: request.jar(store),
-      registrationToken: JSON.parse(options.state.registrationToken), username: options.state.username,
-    };
     request.defaults({ jar: request.jar(store) });
+    apiContext = await loginResume({  //  registrationToken: JSON.parse(options.state.registrationToken)
+      io: requestIO, cookieStore: store, cookieJar: request.jar(store),
+      skypeToken: JSON.parse(options.state.skypeToken),
+      registrationToken: null, verbose: options.verbose, username: options.state.username});
     console.log({
       username: apiContext.username,
       skypeToken: apiContext.skypeToken,
