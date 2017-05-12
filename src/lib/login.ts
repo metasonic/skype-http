@@ -1,5 +1,6 @@
-import {Incident} from "incident";
+﻿ import {Incident} from "incident";
 import * as request from "request";
+import { MemoryCookieStore } from "tough-cookie";
 import {parse as parseUri, Url} from "url";
 import * as Consts from "./consts";
 import {Credentials} from "./interfaces/api/api";
@@ -35,7 +36,8 @@ interface IoOptions {
  * @returns A new API context with the tokens for the provided user
  */
 export async function login(options: LoginOptions): Promise<ApiContext> {
-  const jar: request.CookieJar = request.jar();
+  const store: MemoryCookieStore = new MemoryCookieStore();
+  const jar: request.CookieJar = request.jar(store);
   const ioOptions: IoOptions = {io: options.io, jar: jar};
 
   const getSkypeTokenOptions: microsoftAccount.LoginOptions = {
@@ -75,7 +77,8 @@ export async function login(options: LoginOptions): Promise<ApiContext> {
     username: options.credentials.username,
     skypeToken: skypeToken,
     cookieJar: jar,
-    registrationToken: registrationToken,
+  registrationToken: registrationToken,
+    cookieStore: store,
   };
 }
 
