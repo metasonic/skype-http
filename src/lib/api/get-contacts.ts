@@ -1,3 +1,4 @@
+﻿ import * as fs from "fs";
 import {Incident} from "incident";
 import * as _ from "lodash";
 import * as contactsUri from "../contacts-uri";
@@ -6,7 +7,6 @@ import {Context} from "../interfaces/api/context";
 import * as io from "../interfaces/http-io";
 import {Contact as NativeContact} from "../interfaces/native-api/contact";
 import {formatContact} from "../utils/formatters";
-
 interface ContactsResponse {
   contacts: NativeContact[];
   count: number; // contacts.length
@@ -27,6 +27,7 @@ export async function getContacts(io: io.HttpIo, apiContext: Context): Promise<C
     return Promise.reject(new Incident("net", "Unable to fetch contacts"));
   }
   const body: ContactsResponse = JSON.parse(res.body);
+  console.log("Contact1 is: " + JSON.stringify(body.contacts[0]));
   return _.map(body.contacts, formatContact);
 }
 
