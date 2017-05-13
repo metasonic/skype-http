@@ -4,18 +4,13 @@ import * as apiInterface from "./interfaces/api/api";
 import * as contact from "./interfaces/api/contact";
 import * as conversation from "./interfaces/api/conversation";
 import * as events from "./interfaces/api/events";
+export { events };
 import * as resources from "./interfaces/api/resources";
-
+export { resources };
 export type Api = api.Api;
 export namespace Api {
   export type NewMessage = apiInterface.NewMessage;
   export type SendMessageResult = apiInterface.SendMessageResult;
-}
-export namespace events {
-  export type EventMessage = events.EventMessage;
-}
-export namespace resources {
-  export type TextResource = resources.TextResource;
 }
 export type Contact = contact.Contact;
 export namespace Contact {
