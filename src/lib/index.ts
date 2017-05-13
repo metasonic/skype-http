@@ -1,6 +1,5 @@
 ﻿ import * as api from "./api";
-export { connect } from "./connect";
-import { ConnectOptions as ConOpts } from "./connect";
+export { connect, ConnectOptions } from "./connect";
 import * as apiInterface from "./interfaces/api/api";
 import * as contact from "./interfaces/api/contact";
 import * as conversation from "./interfaces/api/conversation";
@@ -12,9 +11,10 @@ export namespace Api {
   export type NewMessage = apiInterface.NewMessage;
   export type SendMessageResult = apiInterface.SendMessageResult;
 }
-export namespace Interfaces {
+export namespace events {
   export type EventMessage = events.EventMessage;
-  export type ConnectOptions = ConOpts;
+}
+export namespace resources {
   export type TextResource = resources.TextResource;
 }
 export type Contact = contact.Contact;
