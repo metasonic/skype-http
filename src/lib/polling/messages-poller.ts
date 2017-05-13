@@ -1,4 +1,4 @@
-import {EventEmitter} from "events";
+﻿ import {EventEmitter} from "events";
 import {Incident} from "incident";
 import {ParsedConversationId} from "../interfaces/api/api";
 import {Context as ApiContext} from "../interfaces/api/context";
@@ -82,6 +82,25 @@ export function formatControlClearTypingResource(nativeResource: nativeMessageRe
 }
 
 // tslint:disable-next-line:max-line-length
+export function formatConversationUpdateResource(nativeResource: nativeMessageResources.ConversationUpdate): resources.ConversationUpdateResource {
+  const parsedConversationUri: messagesUri.ConversationUri = messagesUri
+    .parseConversation(nativeResource.lastMessage.conversationLink);
+  const parsedContactUri: messagesUri.ContactUri = messagesUri.parseContact(nativeResource.lastMessage.from);
+  const parsedContactId: ParsedConversationId = parseContactId(parsedContactUri.contact);
+  return {
+    type: "ConversationUpdate",
+    id: nativeResource.id,
+        clientId: nativeResource.lastMessage.clientmessageid,
+    composeTime: new Date(nativeResource.lastMessage.composetime),
+    arrivalTime: new Date(nativeResource.lastMessage.originalarrivaltime),
+    from: parsedContactId,
+    conversation: parsedConversationUri.conversation,
+    native: nativeResource,
+    content: nativeResource.lastMessage.content,
+  };
+}
+
+// tslint:disable-next-line:max-line-length
 export function formatControlTypingResource(nativeResource: nativeMessageResources.ControlTyping): resources.ControlTypingResource {
   const parsedConversationUri: messagesUri.ConversationUri = messagesUri
     .parseConversation(nativeResource.conversationLink);
@@ -122,6 +141,9 @@ function formatEventMessage(native: nativeEvents.EventMessage): events.EventMess
       break;
     case "EndpointPresence":
       resource = null;
+    break;
+    case "ConversationUpdate":
+      resource = formatConversationUpdateResource(native.resource as nativeMessageResources.ConversationUpdate);
       break;
     case "NewMessage":
       resource = formatMessageResource(<nativeResources.MessageResource> native.resource);
