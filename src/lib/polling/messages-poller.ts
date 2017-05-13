@@ -188,7 +188,7 @@ export class MessagesPoller extends EventEmitter {
       const res: httpIo.Response = await this.io.post(requestOptions);
 
       if (res.statusCode !== 200) {
-        throw Promise.reject(new Incident("poll", "Unable to poll"));
+        throw new Incident("poll", "Unable to poll");
       }
 
       const body: {eventMessages?: nativeEvents.EventMessage[]} = JSON.parse(res.body);
