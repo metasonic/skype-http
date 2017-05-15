@@ -1,7 +1,7 @@
-﻿ import {EventEmitter} from "events";
-import {Incident} from "incident";
-import {ParsedConversationId} from "../interfaces/api/api";
-import {Context as ApiContext} from "../interfaces/api/context";
+import { EventEmitter } from "events";
+import { Incident } from "incident";
+import { ParsedConversationId } from "../interfaces/api/api";
+import { Context as ApiContext } from "../interfaces/api/context";
 import * as events from "../interfaces/api/events";
 import * as resources from "../interfaces/api/resources";
 import * as httpIo from "../interfaces/http-io";
@@ -82,7 +82,7 @@ export function formatControlClearTypingResource(nativeResource: nativeMessageRe
 }
 
 // tslint:disable-next-line:max-line-length
-export function formatConversationUpdateResource(nativeResource: nativeMessageResources.ConversationUpdate): resources.ConversationUpdateResource {
+export function formatConversationUpdateResource(nativeResource: nativeResources.ConversationUpdate): resources.ConversationUpdateResource {
   const parsedConversationUri: messagesUri.ConversationUri = messagesUri
     .parseConversation(nativeResource.lastMessage.conversationLink);
   const parsedContactUri: messagesUri.ContactUri = messagesUri.parseContact(nativeResource.lastMessage.from);
@@ -90,7 +90,7 @@ export function formatConversationUpdateResource(nativeResource: nativeMessageRe
   return {
     type: "ConversationUpdate",
     id: nativeResource.id,
-        clientId: nativeResource.lastMessage.clientmessageid,
+    clientId: nativeResource.lastMessage.clientmessageid,
     composeTime: new Date(nativeResource.lastMessage.composetime),
     arrivalTime: new Date(nativeResource.lastMessage.originalarrivaltime),
     from: parsedContactId,
@@ -120,13 +120,13 @@ export function formatControlTypingResource(nativeResource: nativeMessageResourc
 function formatMessageResource(nativeResource: nativeResources.MessageResource): resources.Resource {
   switch (nativeResource.messagetype) {
     case "RichText":
-      return formatRichTextResource(<nativeMessageResources.RichText> nativeResource);
+      return formatRichTextResource(<nativeMessageResources.RichText>nativeResource);
     case "Text":
-      return formatTextResource(<nativeMessageResources.Text> nativeResource);
+      return formatTextResource(<nativeMessageResources.Text>nativeResource);
     case "Control/ClearTyping":
-      return formatControlClearTypingResource(<nativeMessageResources.ControlClearTyping> nativeResource);
+      return formatControlClearTypingResource(<nativeMessageResources.ControlClearTyping>nativeResource);
     case "Control/Typing":
-      return formatControlTypingResource(<nativeMessageResources.ControlTyping> nativeResource);
+      return formatControlTypingResource(<nativeMessageResources.ControlTyping>nativeResource);
     default:
       // tslint:disable-next-line:max-line-length
       throw new Error(`Unknown ressource.messageType (${JSON.stringify(nativeResource.messagetype)}) for resource:\n${JSON.stringify(nativeResource)}`);
@@ -141,12 +141,12 @@ function formatEventMessage(native: nativeEvents.EventMessage): events.EventMess
       break;
     case "EndpointPresence":
       resource = null;
-    break;
+      break;
     case "ConversationUpdate":
-      resource = formatConversationUpdateResource(native.resource as nativeMessageResources.ConversationUpdate);
+      resource = formatConversationUpdateResource(native.resource as nativeResources.ConversationUpdate);
       break;
     case "NewMessage":
-      resource = formatMessageResource(<nativeResources.MessageResource> native.resource);
+      resource = formatMessageResource(<nativeResources.MessageResource>native.resource);
       break;
     default:
       // tslint:disable-next-line:max-line-length
@@ -192,7 +192,7 @@ export class MessagesPoller extends EventEmitter {
     if (!this.isActive()) {
       return this;
     }
-    clearInterval(<any> this.intervalId);
+    clearInterval(<any>this.intervalId);
     this.intervalId = null;
     return this;
   }
@@ -213,7 +213,7 @@ export class MessagesPoller extends EventEmitter {
         return Promise.reject(new Incident("poll", "Unable to poll"));
       }
 
-      const body: {eventMessages?: nativeEvents.EventMessage[]} = JSON.parse(res.body);
+      const body: { eventMessages?: nativeEvents.EventMessage[] } = JSON.parse(res.body);
 
       if (body.eventMessages) {
         for (const msg of body.eventMessages) {

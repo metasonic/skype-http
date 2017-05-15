@@ -1,4 +1,4 @@
-﻿ import {MessageResource, Resource} from "./resources";
+import {MessageResource, Resource} from "./resources";
 
 export interface Control extends MessageResource {
   messagetype: "Control/LiveState" | "Control/ClearTyping" | "Control/Typing";
@@ -12,11 +12,6 @@ export interface ControlClearTyping extends Control {
 export interface ControlTyping extends Control {
   messagetype: "Control/Typing";
   counterpartymessageid: string;
-}
-export interface ConversationUpdate extends Resource {
-  id: string;
-  type: string;
-  lastMessage: Text;
 }
 
 export interface ControlLiveState extends Control {

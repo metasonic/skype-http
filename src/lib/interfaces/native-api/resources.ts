@@ -1,19 +1,26 @@
+import { Text, RichText } from "./message-resources";
+
 export interface Resource {
   type: "Message" | "UserPresenceDoc" | "EndpointPresenceDoc" | string;
   // If type is Message: a large integer, otherwise: "endpointMessagingService"
   id: string;
 }
+export interface ConversationUpdate extends Resource {
+  id: string;
+  type: string;
+  lastMessage: Text;
+}
 
 export interface MessageResource extends Resource {
   type: "Message";
   messagetype: "Control/LiveState" | "Control/ClearTyping" | "Control/Typing" | "Event/Call"
-    | "RichText" | "RichText/UriObject" | "Text" | string; // TODO
+  | "RichText" | "RichText/UriObject" | "Text" | string; // TODO
   ackrequired: string;
   // JSON date
   originalarrivaltime: string;
   /**
    * Instant Messaging Display Name ?
-   *
+   * 
    * display name of the author
    */
   imdisplayname: string;
