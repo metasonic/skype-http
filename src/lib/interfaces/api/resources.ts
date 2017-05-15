@@ -1,4 +1,4 @@
-﻿ import {ParsedConversationId} from "./api";
+import {ParsedConversationId} from "./api";
 
 export interface Resource {
   type: "Text" | "RichText" | "Control/ClearTyping" | "Control/Typing" | "ConversationUpdate" /* | "Typing" | ... */;
