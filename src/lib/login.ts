@@ -1,5 +1,5 @@
-import {Incident} from "incident";
-import * as request from "request";
+﻿import {Incident} from "incident";
+import {MemoryCookieStore, Store as CookieStore} from "tough-cookie";
 import {parse as parseUri, Url} from "url";
 import * as Consts from "./consts";
 import {Credentials} from "./interfaces/api/api";
@@ -11,15 +11,15 @@ import * as microsoftAccount from "./providers/microsoft-account";
 import * as utils from "./utils";
 import {hmacSha256} from "./utils/hmac-sha256";
 
+interface IoOptions {
+  io: io.HttpIo;
+  cookies: CookieStore;
+}
+
 export interface LoginOptions {
   io: io.HttpIo;
   credentials: Credentials;
   verbose?: boolean;
-}
-
-interface IoOptions {
-  io: io.HttpIo;
-  jar: request.CookieJar;
 }
 
 /**
@@ -35,19 +35,17 @@ interface IoOptions {
  * @returns A new API context with the tokens for the provided user
  */
 export async function login(options: LoginOptions): Promise<ApiContext> {
-  const jar: request.CookieJar = request.jar();
-  const ioOptions: IoOptions = {io: options.io, jar: jar};
+  const cookies: MemoryCookieStore = new MemoryCookieStore();
+  const ioOptions: IoOptions = {io: options.io, cookies};
 
-  const getSkypeTokenOptions: microsoftAccount.LoginOptions = {
+  const skypeToken: SkypeToken = await microsoftAccount.login({
     credentials: {
       login: options.credentials.username,
       password: options.credentials.password,
     },
     httpIo: options.io,
-    cookieJar: jar,
-  };
-
-  const skypeToken: SkypeToken = await microsoftAccount.login(getSkypeTokenOptions);
+    cookies,
+  });
   if (options.verbose) {
     console.log("Acquired SkypeToken");
   }
@@ -73,9 +71,9 @@ export async function login(options: LoginOptions): Promise<ApiContext> {
 
   return {
     username: options.credentials.username,
-    skypeToken: skypeToken,
-    cookieJar: jar,
-    registrationToken: registrationToken,
+    skypeToken,
+    cookies,
+    registrationToken,
   };
 }
 
@@ -119,7 +117,7 @@ async function getRegistrationToken(
   const requestOptions: io.PostOptions = {
     uri: messagesUri.endpoints(messagesHost),
     headers: headers,
-    jar: options.jar,
+    cookies: options.cookies,
     body: "{}", // Skype requires you to send an empty object as a body
   };
 
@@ -179,7 +177,7 @@ async function subscribeToResources(ioOptions: IoOptions, registrationToken: Reg
 
   const requestOptions: io.PostOptions = {
     uri: messagesUri.subscriptions(registrationToken.host),
-    jar: ioOptions.jar,
+    cookies: ioOptions.cookies,
     body: JSON.stringify(requestDocument),
     headers: {
       RegistrationToken: registrationToken.raw,
@@ -188,7 +186,8 @@ async function subscribeToResources(ioOptions: IoOptions, registrationToken: Reg
 
   const res: io.Response = await ioOptions.io.post(requestOptions);
   if (res.statusCode !== 201) {
-    return Promise.reject(new Incident("net", "Unable to subscribe to resources"));
+    return Promise.reject(new Incident("net",
+      `Unable to subscribe to resources: statusCode: ${res.statusCode} body: ${res.body}`));
   }
 
   // Example response:
@@ -243,7 +242,7 @@ async function createPresenceDocs(ioOptions: IoOptions, registrationToken: Regis
 
   const requestOptions: io.PutOptions = {
     uri: uri,
-    jar: ioOptions.jar,
+    cookies: ioOptions.cookies,
     body: JSON.stringify(requestBody),
     headers: {
       RegistrationToken: registrationToken.raw,

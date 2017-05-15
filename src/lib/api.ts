@@ -1,4 +1,4 @@
-import {EventEmitter} from "events";
+﻿import {EventEmitter} from "events";
 import acceptContactRequest from "./api/accept-contact-request";
 import declineContactRequest from "./api/decline-contact-request";
 import getContact from "./api/get-contact";
@@ -20,7 +20,7 @@ export class Api extends EventEmitter implements ApiEvents {
   context: ApiContext;
   messagesPoller: MessagesPoller;
 
-  constructor (context: ApiContext, io: HttpIo) {
+  constructor(context: ApiContext, io: HttpIo) {
     super();
     this.context = context;
     this.io = io;
@@ -34,39 +34,43 @@ export class Api extends EventEmitter implements ApiEvents {
     return this;
   }
 
-  async declineContactRequest (contactUsername: string): Promise<this> {
+  async declineContactRequest(contactUsername: string): Promise<this> {
     await declineContactRequest(this.io, this.context, contactUsername);
     return this;
   }
 
-  getContact (contactId: string): Promise<Contact> {
+  getContact(contactId: string): Promise<Contact> {
     return getContact(this.io, this.context, contactId);
   }
 
-  getContacts (): Promise<Contact[]> {
+  getContacts(): Promise<Contact[]> {
     return getContacts(this.io, this.context);
   }
 
-  getConversation (conversationId: string): Promise<Conversation> {
+  getConversation(conversationId: string): Promise<Conversation> {
     return getConversation(this.io, this.context, conversationId);
   }
 
-  getConversations (): Promise<Conversation[]> {
+  getConversations(): Promise<Conversation[]> {
     return getConversations(this.io, this.context);
   }
 
-  sendMessage (message: api.NewMessage, conversationId: string): Promise<api.SendMessageResult> {
+  sendMessage(message: api.NewMessage, conversationId: string): Promise<api.SendMessageResult> {
     return sendMessage(this.io, this.context, message, conversationId);
   }
 
-  setStatus (status: api.Status): Promise<any> {
+  getState(): ApiContext.Json {
+    return ApiContext.toJson(this.context);
+  }
+
+  setStatus(status: api.Status): Promise<any> {
     return setStatus(this.io, this.context, status);
   }
 
   /**
    * Start polling and emitting events
    */
-  listen (): Promise<this> {
+  listen(): Promise<this> {
     this.messagesPoller.run();
     return Promise.resolve(this);
   }
@@ -74,7 +78,7 @@ export class Api extends EventEmitter implements ApiEvents {
   /**
    * Stop polling and emitting events
    */
-  stopListening (): Promise<this> {
+  stopListening(): Promise<this> {
     this.messagesPoller.stop();
     return Promise.resolve(this);
   }
