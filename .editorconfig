@@ -3,7 +3,7 @@ root = true
 [*]
 indent_style = space
 indent_size = 2
-charset = utf-8
+#charset = utf-8 #this does break VS it causes BOM to be added to files: https://developercommunity.visualstudio.com/content/problem/21744/vs2017-rc-breaks-the-encoding-of-my-files.html
 trim_trailing_whitespace = true
 insert_final_newline = true
 
