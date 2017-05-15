@@ -1,4 +1,4 @@
-import { Text, RichText } from "./message-resources";
+import { RichText, Text } from "./message-resources";
 
 export interface Resource {
   type: "Message" | "UserPresenceDoc" | "EndpointPresenceDoc" | string;
@@ -20,7 +20,7 @@ export interface MessageResource extends Resource {
   originalarrivaltime: string;
   /**
    * Instant Messaging Display Name ?
-   * 
+   *
    * display name of the author
    */
   imdisplayname: string;

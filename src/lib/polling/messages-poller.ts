@@ -120,13 +120,13 @@ export function formatControlTypingResource(nativeResource: nativeMessageResourc
 function formatMessageResource(nativeResource: nativeResources.MessageResource): resources.Resource {
   switch (nativeResource.messagetype) {
     case "RichText":
-      return formatRichTextResource(<nativeMessageResources.RichText>nativeResource);
+      return formatRichTextResource(<nativeMessageResources.RichText> nativeResource);
     case "Text":
-      return formatTextResource(<nativeMessageResources.Text>nativeResource);
+      return formatTextResource(<nativeMessageResources.Text> nativeResource);
     case "Control/ClearTyping":
-      return formatControlClearTypingResource(<nativeMessageResources.ControlClearTyping>nativeResource);
+      return formatControlClearTypingResource(<nativeMessageResources.ControlClearTyping> nativeResource);
     case "Control/Typing":
-      return formatControlTypingResource(<nativeMessageResources.ControlTyping>nativeResource);
+      return formatControlTypingResource(<nativeMessageResources.ControlTyping> nativeResource);
     default:
       // tslint:disable-next-line:max-line-length
       throw new Error(`Unknown ressource.messageType (${JSON.stringify(nativeResource.messagetype)}) for resource:\n${JSON.stringify(nativeResource)}`);
@@ -146,7 +146,7 @@ function formatEventMessage(native: nativeEvents.EventMessage): events.EventMess
       resource = formatConversationUpdateResource(native.resource as nativeResources.ConversationUpdate);
       break;
     case "NewMessage":
-      resource = formatMessageResource(<nativeResources.MessageResource>native.resource);
+      resource = formatMessageResource(<nativeResources.MessageResource> native.resource);
       break;
     default:
       // tslint:disable-next-line:max-line-length
@@ -192,7 +192,7 @@ export class MessagesPoller extends EventEmitter {
     if (!this.isActive()) {
       return this;
     }
-    clearInterval(<any>this.intervalId);
+    clearInterval(<any> this.intervalId);
     this.intervalId = null;
     return this;
   }
