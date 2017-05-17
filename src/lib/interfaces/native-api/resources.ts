@@ -15,7 +15,7 @@ export interface MessageResource extends Resource {
   type: "Message";
   messagetype: "Control/LiveState" | "Control/ClearTyping" | "Control/Typing" | "Event/Call"
   | "RichText" | "RichText/UriObject" | "RichText/Location" | "RichText/Media_GenericFile"
-  | "Signal/Flamingo" | "Text" | string; // TODO
+  | "RichText/Media_Video" | "Signal/Flamingo" | "Text" | string; // TODO
   ackrequired: string;
   // JSON date
   originalarrivaltime: string;

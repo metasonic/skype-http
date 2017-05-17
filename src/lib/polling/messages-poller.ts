@@ -103,6 +103,9 @@ function formatMessageResource(nativeResource: nativeResources.MessageResource):
     case "RichText/UriObject":
       // tslint:disable-next-line:max-line-length
       return formatUriObjectResource(formatFileResource(formatGenericMessageResource(nativeResource, nativeResource.messagetype), <nativeMessageResources.UriObject> nativeResource), <nativeMessageResources.UriObject> nativeResource);
+    case "RichText/Media_Video":
+      // tslint:disable-next-line:max-line-length
+      return formatMediaVideoResource(formatFileResource(formatGenericMessageResource(nativeResource, nativeResource.messagetype), <nativeMessageResources.MediaVideo> nativeResource), <nativeMessageResources.MediaVideo> nativeResource);
     case "RichText/Media_GenericFile":
       // tslint:disable-next-line:max-line-length
       return formatMediaGenericFileResource(formatFileResource(formatGenericMessageResource(nativeResource, nativeResource.messagetype), <nativeMessageResources.MediaGenericFile> nativeResource), <nativeMessageResources.MediaGenericFile> nativeResource);
@@ -133,7 +136,7 @@ function formatMessageResource(nativeResource: nativeResources.MessageResource):
   }
 }
 // tslint:disable-next-line:max-line-length
-function formatFileResource(retObj: resources.Resource, native: nativeMessageResources.MediaGenericFile | nativeMessageResources.UriObject): resources.FileResource {
+function formatFileResource(retObj: resources.Resource, native: nativeMessageResources.MediaGenericFile | nativeMessageResources.UriObject | nativeMessageResources.MediaVideo): resources.FileResource {
   const ret: resources.FileResource = retObj as resources.FileResource;
   const $: CheerioStatic = cheerio.load(native.content);
   const obj: Cheerio = $("URIObject");
@@ -153,6 +156,12 @@ function formatMediaGenericFileResource(retObj: resources.FileResource, native: 
   const ret: resources.RichTextMediaGenericFileResource = retObj as resources.RichTextMediaGenericFileResource;
   return ret;
 }
+// tslint:disable-next-line:max-line-length
+function formatMediaVideoResource(retObj: resources.FileResource, native: nativeMessageResources.MediaVideo): resources.RichTextMediaGenericFileResource {
+  const ret: resources.RichTextMediaGenericFileResource = retObj as resources.RichTextMediaGenericFileResource;
+  return ret;
+}
+
 // tslint:disable-next-line:max-line-length
 function formatUriObjectResource(retObj: resources.FileResource, native: nativeMessageResources.UriObject): resources.RichTextUriObjectResource {
   const ret: resources.RichTextUriObjectResource = retObj as resources.RichTextUriObjectResource;

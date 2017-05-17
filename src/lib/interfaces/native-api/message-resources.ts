@@ -91,3 +91,8 @@ export interface MediaGenericFile extends MessageResource {
   clientmessageid: string; // A large integer (~20 digits)
   content: string; // XML, root is <URIObject>
 }
+export interface MediaVideo extends MessageResource {
+  messagetype: "RichText/Media_Video";
+  clientmessageid: string; // A large integer (~20 digits)
+  content: string; // XML, root is <URIObject>
+}
