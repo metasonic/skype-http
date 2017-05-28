@@ -192,7 +192,7 @@ export function parseMessage(uri: string): MessageUri {
   }
   const match: RegExpExecArray | null = MESSAGE_PATTERN.exec(parsed.pathname);
   if (match === null) {
-    throw new Incident("parse-error", "Expected URI to be a conversation uri");
+    throw new Incident("parse-error", "Expected URI to be a message uri");
   }
   return {
     host: parsed.host,
