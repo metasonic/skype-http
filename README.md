@@ -52,8 +52,7 @@ run();
 
 ## Running example
 
-The demo will prompt you your username and password: you should use your Skype account (there is no support for
-Microsoft accounts for now).
+The demo will prompt you your username and password: you should use your Skype account or MSA.
 
 ````shell
 git clone https://github.com/demurgos/skype-http
