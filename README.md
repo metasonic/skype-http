@@ -35,7 +35,7 @@ var skypeHttp = require("skype-http");
 
 ## Quick start
 
-The code below sends `Hello, World!` to all of `bob`'s contacts.
+The code below sends `Hello, World!` to all of `bob`'s contacts.  If bob's skype account was an MSA account(rather than older skype login) he would login with "bob@bobsdomain.com".
 
 ```typescript
 import { Api, connect } from "skype-http";
