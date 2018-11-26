@@ -12,5 +12,5 @@ export enum DisplayNameSource {
 
 export const $DisplayNameSource: TsEnumType<DisplayNameSource> = new TsEnumType<DisplayNameSource>({
   enum: DisplayNameSource,
-  rename: CaseStyle.SnakeCase,
+  changeCase: CaseStyle.SnakeCase,
 });
