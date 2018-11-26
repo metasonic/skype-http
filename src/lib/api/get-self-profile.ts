@@ -35,7 +35,7 @@ export async function getSelfProfile(
   let result: ApiProfile;
   try {
     if ($ApiProfile.read) {
-      result = $ApiProfile.read(reader, parsed);
+      result = $ApiProfile.read(reader, response.body);
     } else {
       throw Error("read should always be defined");
     }

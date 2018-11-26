@@ -92,7 +92,7 @@ export interface ApiProfile {
   phoneOffice: any | null;
   mood: any | null;
   richMood: any | null;
-  avatarUrl: Url;
+  avatarUrl: any | null;
   username: string;
 }
 
@@ -115,7 +115,7 @@ export const $ApiProfile: DocumentType<ApiProfile> = new DocumentType<ApiProfile
     phoneOffice: {type: new AnyType()},
     mood: {type: new AnyType()},
     richMood: {type: new AnyType()},
-    avatarUrl: {type: $Url},
+    avatarUrl: {type: new AnyType()},
     username: {type: new Ucs2StringType({maxLength: Infinity})},
   },
   noExtraKeys: true,

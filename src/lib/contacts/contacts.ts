@@ -60,7 +60,7 @@ export class ContactsService {
     let result: GetInvitesResult;
     try {
         if ($GetInvitesResult.read) {
-          result = $GetInvitesResult.read(parsed, reader);
+          result = $GetInvitesResult.read(reader, response.body);
         } else {
           throw Error("read should always be defined");
         }

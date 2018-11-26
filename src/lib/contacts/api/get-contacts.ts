@@ -34,7 +34,7 @@ export async function getContacts(httpIo: io.HttpIo, apiContext: Context): Promi
   try {
 
         if ($GetUserResult.read) {
-          result = $GetUserResult.read(reader, parsed);
+          result = $GetUserResult.read(reader, response.body);
         } else {
           throw Error("read should always be defined");
         }
