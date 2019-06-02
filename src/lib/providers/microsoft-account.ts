@@ -114,7 +114,7 @@ export interface LiveKeys {
 export async function getLiveKeys(options: LoadLiveKeysOptions): Promise<LiveKeys> {
   try {
     const uri: string = url.resolve(skypeLoginUri, path.posix.join("oauth", "microsoft"));
-    const queryString: {[key: string]: string} = {
+    const queryString: { [key: string]: string } = {
       client_id: webClientLiveLoginId,
       redirect_uri: skypeWebUri,
     };
@@ -203,7 +203,14 @@ export interface GetLiveTokenOptions {
 export async function getLiveToken(options: GetLiveTokenOptions): Promise<string> {
   try {
     const response: io.Response = await requestLiveToken(options);
-    return scrapLiveToken(response.body);
+    if (response.body.indexOf("identity/confirm") !== -1) {
+      const response2: io.Response = await checkIfIdentityConfirm(response.body, options);
+      console.log(response2.body);
+      const response3: io.Response = await sendCodeRequest(response2.body, options);
+      console.log(response3.body);
+    }
+
+    return scrapLiveToken(response.body, options);
   } catch (_err) {
     const err: getLiveTokenErrors.GetLiveTokenError.Cause | WrongCredentialsError | WrongCredentialsLimitError = _err;
     switch (err.name) {
@@ -226,7 +233,7 @@ export async function getLiveToken(options: GetLiveTokenOptions): Promise<string
 // Get live token from live keys and credentials
 export async function requestLiveToken(options: GetLiveTokenOptions): Promise<io.Response> {
   const uri: string = url.resolve(liveLoginUri, path.posix.join("ppsecure", "post.srf"));
-  const queryString: {[key: string]: string} = {
+  const queryString: { [key: string]: string } = {
     wa: "wsignin1.0",
     wp: "MBI_SSL",
     // tslint:disable-next-line:max-line-length
@@ -262,12 +269,166 @@ export async function requestLiveToken(options: GetLiveTokenOptions): Promise<io
   }
 }
 
+// Get live token from live keys and credentials
+export async function checkIfIdentityConfirm(html: string, options: GetLiveTokenOptions): Promise<io.Response> {
+  const $: CheerioStatic = cheerio.load(html);
+
+  const identityConfirmUrl: boolean | undefined = $("#fmHF").attr().action.indexOf("identity/confirm") !== -1;
+  if (identityConfirmUrl) {
+    const identityConfirmUrl: string = $("#fmHF").attr().action;
+    const clientFlight: string = $("#client_flight").attr().value;
+    const ipt: string = $("#ipt").attr().value;
+    const pprid: string = $("#pprid").attr().value;
+    const uaid: string = $("#uaid").attr().value;
+
+    const formData: any = {
+      client_flight: clientFlight,
+      ipt,
+      pprid,
+      uaid,
+    };
+
+    const postOptions: io.PostOptions = {
+      uri: identityConfirmUrl,
+      cookies: options.cookies,
+      form: formData,
+    };
+    try {
+      return options.httpIo.post(postOptions);
+    } catch (err) {
+      throw httpErrors.RequestError.create(err, postOptions);
+    }
+  } else {
+    return Promise.reject("NO SECURITY NEEDED");
+  }
+}
+
+export async function sendCodeRequest(html: string, options: GetLiveTokenOptions): Promise<io.Response> {
+  const $: CheerioStatic = cheerio.load(html);
+
+  // @ts-ignore
+  const scriptData: any = $("script").get()[6].children[0].data;
+
+  // tslint:disable-next-line:typedef
+  const parse = JSON.parse(scriptData.replace("//<![CDATA[\n$Config=", "")
+    .replace(';window.$Do && window.$Do.register(\"$Config\", 0, true);\n//]]>', ""));
+
+  const purpose: any = parse.WLXAccount.confirmIdentity.options.viewDefs.proofpicker.options.viewDefs.proofpicker.options.proofPurpose;
+  const epid: string = JSON.parse(parse.WLXAccount.confirmIdentity.viewContext.data.rawProofList)[0].epid;
+  const email: string = parse.email;
+  const uiflvr: number = parse.uiflvr;
+  const uaid: string = parse.uaid;
+  const scid: number = parse.scid;
+  const hpgid: number = parse.hpgid;
+
+  const sendOtt: string = parse.WLXAccount.urls.dataRequest.sendOtt.url;
+  const verifyCode: string = parse.WLXAccount.urls.dataRequest.verifyCode.url;
+
+  // @ts-ignore
+  const encryptData: any = $("script").get()[17].childNodes[0].data;
+  const [, second, , fourth, , sixth]: any = encryptData.split('"');
+
+  const key: string = second;
+  const randomNum: string = fourth;
+  const SKI: string = sixth;
+
+  interface RequestBody {
+    "token": string;
+    "purpose": string;
+    "epid": string;
+    "autoVerification": boolean;
+    "autoVerificationFailed": boolean;
+    "confirmProof": string;
+    "uiflvr": number;
+    "uaid": string;
+    "scid": number;
+    "hpgid": number;
+  }
+
+  const requestBody: RequestBody = {
+    token: "",
+    purpose,
+    epid,
+    autoVerification: false,
+    autoVerificationFailed: false,
+    confirmProof: email,
+    uiflvr,
+    uaid,
+    scid,
+    hpgid,
+  };
+
+  const canary: string = parse.apiCanary;
+  const eipt: string = parse.eipt;
+  const tcxt: string = parse.clientTelemetry.tcxt;
+  const wlPreferIpt: number = 1;
+
+  const postOptions: io.PostOptions = {
+    uri: sendOtt,
+    headers: {
+      canary,
+      eipt,
+      hpgid,
+      scid,
+      tcxt,
+      uiflvr,
+      wlPreferIpt,
+    },
+    cookies: options.cookies,
+    body: JSON.stringify(requestBody),
+  };
+  try {
+    return options.httpIo.post(postOptions);
+  } catch (err) {
+    throw httpErrors.RequestError.create(err, postOptions);
+  }
+
+  /**
+   *
+   *
+   * proofPurpose = JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).WLXAccount.confirmIdentity.options.viewDefs.proofpicker.options.viewDefs.proofpicker.options.proofPurpose
+   *
+   * epid  >  JSON.parse(JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).WLXAccount.confirmIdentity.viewContext.data.rawProofList)[0].epid
+   *
+   * email > JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).email
+   *
+   * uiflvr  JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).uiflvr
+   *
+   * uaid JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).uaid
+   *
+   * scid JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).scid
+   *
+   * hpgid JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).hpgid
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   * sendOtt  > JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).WLXAccount.urls.dataRequest.sendOtt.url
+   *
+   *
+   * verifyCode  > JSON.parse($('script').get()[6].children[0].data.substring(20, 35125)).WLXAccount.urls.dataRequest.verifyCode.url
+   *
+   */
+
+  /**
+   * key  > $('script').get()[17].children[0].data.split('"')[1]
+   *
+   * randomNum  > $('script').get()[17].children[0].data.split('"')[3]
+   *
+   * SKI  > $('script').get()[17].children[0].data.split('"')[5]
+   */
+}
+
 /**
  * Scrap the result of a sendCredentials requests to retrieve the value of the `t` parameter
  * @param html
+ * @param options
  * @returns The token provided by Live for Skype
  */
-export function scrapLiveToken(html: string): string {
+export function scrapLiveToken(html: string, options: GetLiveTokenOptions): string {
   // TODO(demurgos): Handle the possible failure of .load (invalid HTML)
   const $: CheerioStatic = cheerio.load(html);
   const tokenNode: Cheerio = $("#t");
@@ -323,12 +484,12 @@ export async function getSkypeToken(options: GetSkypeTokenOptions): Promise<Skyp
 export async function requestSkypeToken(options: GetSkypeTokenOptions): Promise<io.Response> {
   const uri: string = url.resolve(skypeLoginUri, "microsoft");
 
-  const queryString: {[key: string]: string} = {
+  const queryString: { [key: string]: string } = {
     client_id: "578134",
     redirect_uri: "https://web.skype.com",
   };
 
-  const formData: {[key: string]: string} = {
+  const formData: { [key: string]: string } = {
     t: options.liveToken,
     client_id: "578134",
     oauthPartner: "999",
