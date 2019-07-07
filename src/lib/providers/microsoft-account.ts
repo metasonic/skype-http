@@ -11,6 +11,7 @@ import { WrongCredentialsError } from "../errors/wrong-credentials";
 import { WrongCredentialsLimitError } from "../errors/wrong-credentials-limit";
 import { SkypeToken } from "../interfaces/api/context";
 import * as io from "../interfaces/http-io";
+import * as securityTools from "./security-code-encrypt";
 
 export const skypeWebUri: string = "https://web.skype.com/";
 export const skypeLoginUri: string = "https://login.skype.com/login/";
@@ -205,15 +206,19 @@ export interface GetLiveTokenOptions {
 }
 
 export async function getLiveToken(options: GetLiveTokenOptions): Promise<string> {
-  try {
-    const response: io.Response = await requestLiveToken(options);
-    if (response.body.indexOf("identity/confirm") !== -1) {
-      const response2: io.Response = await checkIfIdentityConfirm(response.body, options);
-      console.log(response2.body);
-      const response3: io.Response = await sendCodeRequest(response2.body, options);
-      console.log(response3.body);
-    }
 
+  try {
+    let response: io.Response = await requestLiveToken(options);
+    if (response.body.indexOf("identity/confirm") !== -1) {
+      const startIdentityConfirmResponse: io.Response = await startIdentityConfirm(response.body, options);
+      console.log(startIdentityConfirmResponse.body);
+      const sendCodeResponse: SecurityCode = await sendCodeRequest(startIdentityConfirmResponse.body, options);
+      console.log(sendCodeResponse);
+      const sendUserCodeResponse: io.Response = await sendUserCode(sendCodeResponse, options);
+      console.log(sendUserCodeResponse.body);
+      // Update request live token response
+      response = await requestLiveToken(options);
+    }
     return scrapLiveToken(response.body, options);
   } catch (_err) {
     const err: getLiveTokenErrors.GetLiveTokenError.Cause | WrongCredentialsError | WrongCredentialsLimitError = _err;
@@ -275,7 +280,7 @@ export async function requestLiveToken(options: GetLiveTokenOptions): Promise<io
 }
 
 // Get live token from live keys and credentials
-export async function checkIfIdentityConfirm(html: string, options: GetLiveTokenOptions): Promise<io.Response> {
+export async function startIdentityConfirm(html: string, options: GetLiveTokenOptions): Promise<io.Response> {
   const $: CheerioStatic = cheerio.load(html);
 
   const identityConfirmUrl: boolean | undefined = $("#fmHF").attr().action.indexOf("identity/confirm") !== -1;
@@ -308,7 +313,7 @@ export async function checkIfIdentityConfirm(html: string, options: GetLiveToken
   }
 }
 
-export async function sendCodeRequest(html: string, options: GetLiveTokenOptions): Promise<io.Response> {
+export async function sendCodeRequest(html: string, options: GetLiveTokenOptions): Promise<SecurityCode> {
   const $: CheerioStatic = cheerio.load(html);
 
   // @ts-ignore
@@ -382,8 +387,30 @@ export async function sendCodeRequest(html: string, options: GetLiveTokenOptions
     cookies: options.cookies,
     body: JSON.stringify(requestBody),
   };
+
+  const securityCode: SecurityCode = {
+    // @ts-ignore
+    key: $("script").get()[17].children[0].data.split('"')[1],
+    // @ts-ignore
+    randomNum: $("script").get()[17].children[0].data.split('"')[3],
+    // @ts-ignore
+    SKI: $("script").get()[17].children[0].data.split('"')[5],
+    // @ts-ignore
+    verifyCodeUrl: parse.WLXAccount.urls.dataRequest.verifyCode.url,
+    response: await options.httpIo.post(postOptions),
+    epid,
+    email,
+    uiflvr,
+    uaid,
+    scid,
+    hpgid,
+    canary,
+    tcxt,
+    wlPreferIpt,
+    eipt,
+  };
   try {
-    return options.httpIo.post(postOptions);
+    return securityCode;
   } catch (err) {
     throw httpErrors.RequestError.create(err, postOptions);
   }
@@ -427,6 +454,77 @@ export async function sendCodeRequest(html: string, options: GetLiveTokenOptions
    */
 }
 
+export interface SecurityCode {
+  "key": any;
+  "randomNum": any;
+  "SKI": any;
+  "verifyCodeUrl": any;
+  "response": io.Response;
+  "epid": string;
+  "email": string;
+  "uiflvr": number;
+  "uaid": string;
+  "scid": number;
+  "hpgid": number;
+  "canary": string;
+  "tcxt": string;
+  "wlPreferIpt": number;
+  "eipt": string;
+}
+
+export async function sendUserCode(securityCode: SecurityCode, options: GetLiveTokenOptions): Promise<io.Response> {
+  const {response}: any = securityCode;
+  const {apiCanary}: any = JSON.parse(response.body);
+
+  interface RequestBody {
+    "publicKey": string;
+    "encryptedCode": string;
+    "action": string;
+    "purpose": string;
+    "epid": string;
+    "confirmProof": string;
+    "uiflvr": number;
+    "uaid": string;
+    "scid": number;
+    "hpgid": number;
+  }
+
+  const userCode: string = "GET USER CODE FROM USER";
+  const requestBody: RequestBody = {
+    publicKey: securityCode.SKI,
+    encryptedCode: await securityTools.getEncryptedCode(userCode, securityCode.key, securityCode.randomNum),
+    action: "IptVerify",
+    purpose: "UnfamiliarLocationHard",
+    epid: securityCode.epid,
+    confirmProof: securityCode.email,
+    uiflvr: securityCode.uiflvr,
+    uaid: securityCode.uaid,
+    scid: securityCode.scid,
+    hpgid: securityCode.hpgid,
+  };
+
+  const postOptions: io.PostOptions = {
+    uri: securityCode.verifyCodeUrl,
+    headers: {
+      canary: apiCanary,
+      eipt: securityCode.eipt,
+      hpgid: securityCode.hpgid,
+      scid: securityCode.scid,
+      tcxt: securityCode.tcxt,
+      uiflvr: securityCode.uiflvr,
+      wlPreferIpt: securityCode.wlPreferIpt,
+    },
+    cookies: options.cookies,
+    body: JSON.stringify(requestBody),
+  };
+  try {
+    return options.httpIo.post(postOptions);
+  } catch (err) {
+    throw httpErrors.RequestError.create(err, postOptions);
+  }
+
+}
+
 /**
  * Scrap the result of a sendCredentials requests to retrieve the value of the `t` parameter
  * @param html
@@ -443,6 +541,8 @@ export function scrapLiveToken(html: string, options: GetLiveTokenOptions): stri
       throw WrongCredentialsError.create();
       /* tslint:disable-next-line:max-line-length */
     } else if (html.indexOf("sErrTxt:\"You\\'ve tried to sign in too many times with an incorrect account or password.\"") >= 0) {
+      throw WrongCredentialsLimitError.create();
+    } else if (html.indexOf("sErrTxt:\"The account or password is incorrect. Please try again.\"") >= 0) {
       throw WrongCredentialsLimitError.create();
     } else {
       // TODO(demurgos): Check if there is a PPFT token (redirected to the getLiveKeys response)
